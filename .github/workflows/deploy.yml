@@ -9,37 +9,42 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Check if S3 bucket name is set
-      run: |
-        if [ -z "${{ secrets.S3_BUCKET_NAME }}" ]; then
-          echo "Error: S3_BUCKET_NAME is not set."
-          exit 1
-        else
-          echo "S3_BUCKET_NAME is set to: ${{ secrets.S3_BUCKET_NAME }}"
-        fi
+      - name: Check if S3 bucket name is set
+        run: |
+          if [ -z "$S3_BUCKET_NAME" ]; then
+            echo "Error: S3_BUCKET_NAME is not set."
+            exit 1
+          fi
+          echo "S3 bucket name detected."
 
-    - name: Sync files to S3
-      run: |
-        aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME }} --delete --exclude ".git/*" --exclude ".github/*"
+      - name: Sync files to S3
+        run: |
+          aws s3 sync . s3://$S3_BUCKET_NAME \
+            --delete \
+            --exclude ".git/*" \
+            --exclude ".github/*"
 
-    - name: Invalidate CloudFront cache (optional)
-      run: |
-        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
-          echo "Invalidating CloudFront distribution..."
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-        else
-          echo "No CloudFront distribution ID provided. Skipping invalidation."
-        fi
+      - name: Invalidate CloudFront cache (optional)
+        run: |
+          if [ -n "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+              --paths "/*"
+          else
+            echo "No CloudFront distribution ID provided. Skipping."
+          fi
