@@ -1,4 +1,6 @@
 
+
+// Fetch and Display a Visitor Count from an API//
 const apiUrl = "https://o93z6nu3h0.execute-api.us-east-1.amazonaws.com/Prod/hello";
 
 async function fetchVisitorCount() {
@@ -30,6 +32,8 @@ async function fetchVisitorCount() {
     }
 }
 
+
+ //Set Up PDF Download of a Resume Section//
 document.addEventListener("DOMContentLoaded", function () {
     fetchVisitorCount();
 
